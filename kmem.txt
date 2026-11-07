@@ -1,0 +1,4 @@
+// kmem: aniversări, comemorări, remindere. Formatul e descris în README.md.
+
+# aniversări
+21.12.1972   Calin

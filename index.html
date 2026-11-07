@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kmem</title>
+<style>
+:root{--bg:#f7f6f2;--fg:#222;--mut:#777;--card:#fff;--line:#e2e0d8;--acc:#b5532a;--azi:#fff0d4;--err:#c0392b}
+@media (prefers-color-scheme: dark){:root{--bg:#17181a;--fg:#e6e6e6;--mut:#8c8c8c;--card:#212327;--line:#34373c;--acc:#e8875a;--azi:#3b2f1b;--err:#ff7b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:1.6rem}
+#azi{color:var(--mut)}
+header a{margin-left:auto}
+a{color:var(--acc)}
+h2{font-size:1.05rem;margin:24px 0 8px}
+ul{list-style:none;margin:0;padding:0}
+.lista li{display:flex;gap:12px;align-items:baseline;padding:8px 12px;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.lista .cand{min-width:6.5em;flex-shrink:0}
+.lista .cand small{display:block;color:var(--mut);font-size:.8rem}
+.lista li.azi{background:var(--azi);border-color:var(--acc)}
+.lista li.azi .cand{color:var(--acc);font-weight:600}
+.ani{color:var(--mut);white-space:nowrap}
+.tag{font-size:.72rem;color:var(--mut);border:1px solid var(--line);border-radius:4px;padding:0 5px;white-space:nowrap}
+.gol{color:var(--mut);font-style:italic}
+.an{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.luna{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.luna.acum{border-color:var(--acc)}
+.luna h3{margin:0 0 4px;font-size:.95rem;text-transform:capitalize}
+.luna li{font-size:.9rem;display:flex;gap:8px}
+.luna .zi{min-width:1.6em;text-align:right;color:var(--mut);flex-shrink:0}
+.luna li.trecut{opacity:.45}
+.luna li.azi{color:var(--acc);font-weight:600}
+#erori{color:var(--err)}
+#erori pre{white-space:pre-wrap;font-size:.85rem}
+footer{margin-top:28px;color:var(--mut);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>kmem</h1>
+    <span id="azi"></span>
+    <a id="edit" href="https://github.com/zeromem0/kmem/edit/main/kmem.txt">editează</a>
+  </header>
+
+  <section id="erori" hidden><h2>Rânduri neînțelese în kmem.txt</h2><pre></pre></section>
+
+  <h2>Următoarele <span id="nzile"></span> zile</h2>
+  <ul class="lista" id="urm"></ul>
+
+  <section id="trecute-s" hidden>
+    <h2>Remindere trecute (de șters din fișier)</h2>
+    <ul class="lista" id="trecute"></ul>
+  </section>
+
+  <h2 id="an-titlu"></h2>
+  <div class="an" id="an"></div>
+
+  <footer>Datele sunt în <a href="https://github.com/zeromem0/kmem/blob/main/kmem.txt">kmem.txt</a>. După o editare, pagina se actualizează în 1–2 minute.</footer>
+</main>
+
+<script>
+const FISIER = 'kmem.txt';
+const ZILE = +(new URLSearchParams(location.search).get('zile')) || 30;
+const LUNI = ['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'];
+const ZS = ['dum','lun','mar','mie','joi','vin','sâm'];
+const ZI = 86400000;
+
+const azi = new Date(); azi.setHours(0,0,0,0);
+
+const zileLuna = (y, m) => new Date(y, m + 1, 0).getDate();
+// 29.02 în an nebisect devine 28.02; „lunar 31” devine ultima zi a lunii
+const data = (y, m, d) => new Date(y, m, Math.min(d, zileLuna(y, m)));
+const dif = (a, b) => Math.round((a - b) / ZI);
+const dd = n => String(n).padStart(2, '0');
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function parse(txt) {
+  const ev = [], err = [];
+  let cat = '';
+  txt.split(/\r?\n/).forEach((raw, i) => {
+    const l = raw.trim();
+    if (!l || l.startsWith('//')) return;
+    if (l.startsWith('#')) { cat = l.replace(/^#+\s*/, ''); return; }
+    let m, e = null;
+    if ((m = l.match(/^lunar\s+(\d{1,2})\s+(.+)$/i)))
+      e = {tip: 'lunar', d: +m[1], text: m[2]};
+    else if ((m = l.match(/^o\s?dat[aă]\s+(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(.+)$/i)))
+      e = {tip: 'odata', d: +m[1], m: m[2] - 1, y: +m[3], text: m[4]};
+    else if ((m = l.match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\s+(.+)$/)))
+      e = {tip: 'anual', d: +m[1], m: m[2] - 1, y: m[3] ? +m[3] : null, text: m[4]};
+    if (e && e.d >= 1 && e.d <= 31 && (e.m === undefined || (e.m >= 0 && e.m <= 11))) {
+      e.cat = cat; ev.push(e);
+    } else err.push(`${i + 1}: ${raw}`);
+  });
+  return {ev, err};
+}
+
+// toate aparițiile lui e între a și b (inclusiv)
+function aparitii(e, a, b) {
+  const r = [];
+  if (e.tip === 'odata') {
+    const t = new Date(e.y, e.m, e.d);
+    if (t >= a && t <= b) r.push({t, e});
+  } else if (e.tip === 'anual') {
+    for (let y = a.getFullYear(); y <= b.getFullYear(); y++) {
+      if (e.y && y < e.y) continue;
+      const t = data(y, e.m, e.d);
+      if (t >= a && t <= b) r.push({t, e, ani: e.y ? y - e.y : null});
+    }
+  } else {
+    for (let c = new Date(a.getFullYear(), a.getMonth(), 1); c <= b; c.setMonth(c.getMonth() + 1)) {
+      const t = data(c.getFullYear(), c.getMonth(), e.d);
+      if (t >= a && t <= b) r.push({t, e});
+    }
+  }
+  return r;
+}
+
+const candText = n => n === 0 ? 'azi' : n === 1 ? 'mâine' : n === 2 ? 'poimâine' : n < 0 ? `acum ${-n} zile` : `peste ${n} zile`;
+const aniText = n => n ? `${n} ${n === 1 ? 'an' : n % 100 >= 20 || n % 100 === 0 ? 'de ani' : 'ani'}` : '';
+
+function rand(o) {
+  const n = dif(o.t, azi);
+  return `<li class="${n === 0 ? 'azi' : ''}">
+    <span class="cand">${candText(n)}<small>${ZS[o.t.getDay()]} ${dd(o.t.getDate())}.${dd(o.t.getMonth() + 1)}${o.e.tip === 'odata' ? '.' + o.t.getFullYear() : ''}</small></span>
+    <span>${esc(o.e.text)} ${o.ani ? `<span class="ani">· ${aniText(o.ani)}</span>` : ''} ${o.e.cat ? `<span class="tag">${esc(o.e.cat)}</span>` : ''}</span>
+  </li>`;
+}
+
+function afiseaza({ev, err}) {
+  document.getElementById('azi').textContent =
+    `${ZS[azi.getDay()]} ${azi.getDate()} ${LUNI[azi.getMonth()]} ${azi.getFullYear()}`;
+  document.getElementById('nzile').textContent = ZILE % 100 >= 20 || ZILE % 100 === 0 ? `${ZILE} de` : ZILE;
+
+  if (err.length) {
+    const s = document.getElementById('erori');
+    s.hidden = false; s.querySelector('pre').textContent = err.join('\n');
+  }
+
+  const sf = new Date(azi.getTime() + ZILE * ZI);
+  const urm = ev.flatMap(e => aparitii(e, azi, sf)).sort((x, y) => x.t - y.t);
+  document.getElementById('urm').innerHTML = urm.length ? urm.map(rand).join('') : '<li class="gol">nimic</li>';
+
+  const trec = ev.filter(e => e.tip === 'odata' && new Date(e.y, e.m, e.d) < azi)
+    .map(e => ({t: new Date(e.y, e.m, e.d), e})).sort((x, y) => x.t - y.t);
+  if (trec.length) {
+    document.getElementById('trecute-s').hidden = false;
+    document.getElementById('trecute').innerHTML = trec.map(rand).join('');
+  }
+
+  // anul curent, pe luni
+  const Y = azi.getFullYear();
+  document.getElementById('an-titlu').textContent = `Anul ${Y}`;
+  const peLuni = LUNI.map(() => []);
+  ev.filter(e => e.tip !== 'lunar')
+    .flatMap(e => aparitii(e, new Date(Y, 0, 1), new Date(Y, 11, 31)))
+    .forEach(o => peLuni[o.t.getMonth()].push(o));
+  let html = peLuni.map((l, m) => {
+    l.sort((x, y) => x.t - y.t);
+    const li = l.map(o => {
+      const n = dif(o.t, azi);
+      return `<li class="${n < 0 ? 'trecut' : n === 0 ? 'azi' : ''}"><span class="zi">${o.t.getDate()}</span>
+        <span>${esc(o.e.text)}${o.ani ? ` <span class="ani">${aniText(o.ani)}</span>` : ''}</span></li>`;
+    }).join('');
+    return `<div class="luna${m === azi.getMonth() ? ' acum' : ''}"><h3>${LUNI[m]}</h3><ul>${li || '<li class="gol">—</li>'}</ul></div>`;
+  }).join('');
+  const lunare = ev.filter(e => e.tip === 'lunar').sort((x, y) => x.d - y.d);
+  if (lunare.length)
+    html += `<div class="luna"><h3 style="text-transform:none">În fiecare lună</h3><ul>${lunare.map(e =>
+      `<li><span class="zi">${e.d}</span><span>${esc(e.text)}</span></li>`).join('')}</ul></div>`;
+  document.getElementById('an').innerHTML = html;
+}
+
+fetch(FISIER + '?' + Date.now(), {cache: 'no-store'})
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  .then(t => afiseaza(parse(t)))
+  .catch(e => {
+    const s = document.getElementById('erori');
+    s.hidden = false;
+    s.querySelector('h2').textContent = 'Nu pot citi kmem.txt';
+    s.querySelector('pre').textContent = String(e) +
+      (location.protocol === 'file:' ? '\nPagina deschisă direct din fișier nu poate citi kmem.txt; vezi README.' : '');
+  });
+</script>
+</body>
+</html>
