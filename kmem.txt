@@ -3,6 +3,7 @@
 # aniversări
 21.12.1972   Calin
 26.11.1974   Cristina
+11.01.1980   Tina
 
 # comemorări
 15.03.2010   Mama            // date de test
