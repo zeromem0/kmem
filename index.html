@@ -33,6 +33,10 @@ ul{list-style:none;margin:0;padding:0}
 .luna .zi{min-width:1.6em;text-align:right;color:var(--mut);flex-shrink:0}
 .luna li.trecut{opacity:.45}
 .luna li.azi{color:var(--acc);font-weight:600}
+#alege{margin-top:16px;padding:12px;background:var(--card);border:1px dashed var(--acc);border-radius:8px}
+#alege p{margin:0 0 10px}
+.buton{display:inline-block;padding:6px 14px;margin-right:8px;background:var(--acc);color:#fff;border-radius:6px;cursor:pointer}
+body.trage main{outline:3px dashed var(--acc);outline-offset:-6px}
 #erori{color:var(--err)}
 #erori pre{white-space:pre-wrap;font-size:.85rem}
 footer{margin-top:28px;color:var(--mut);font-size:.85rem}
@@ -45,6 +49,12 @@ footer{margin-top:28px;color:var(--mut);font-size:.85rem}
     <span id="azi"></span>
     <a id="edit" href="https://github.com/zeromem0/kmem/edit/main/kmem.txt">editează</a>
   </header>
+
+  <section id="alege" hidden>
+    <p>Deschisă din folder, pagina nu poate citi singură <code>kmem.txt</code>.</p>
+    <label class="buton">Alege kmem.txt<input type="file" accept=".txt,text/plain" hidden></label>
+    <span class="gol">sau trage fișierul peste pagină</span>
+  </section>
 
   <section id="erori" hidden><h2>Rânduri neînțelese în kmem.txt</h2><pre></pre></section>
 
@@ -136,10 +146,10 @@ function afiseaza({ev, err}) {
     `${ZS[azi.getDay()]} ${azi.getDate()} ${LUNI[azi.getMonth()]} ${azi.getFullYear()}`;
   document.getElementById('nzile').textContent = ZILE % 100 >= 20 || ZILE % 100 === 0 ? `${ZILE} de` : ZILE;
 
-  if (err.length) {
-    const s = document.getElementById('erori');
-    s.hidden = false; s.querySelector('pre').textContent = err.join('\n');
-  }
+  const s = document.getElementById('erori');
+  s.hidden = !err.length;
+  s.querySelector('h2').textContent = 'Rânduri neînțelese în kmem.txt';
+  s.querySelector('pre').textContent = err.join('\n');
 
   const sf = new Date(azi.getTime() + ZILE * ZI);
   const urm = ev.flatMap(e => aparitii(e, azi, sf)).sort((x, y) => x.t - y.t);
@@ -147,10 +157,8 @@ function afiseaza({ev, err}) {
 
   const trec = ev.filter(e => e.tip === 'odata' && new Date(e.y, e.m, e.d) < azi)
     .map(e => ({t: new Date(e.y, e.m, e.d), e})).sort((x, y) => x.t - y.t);
-  if (trec.length) {
-    document.getElementById('trecute-s').hidden = false;
-    document.getElementById('trecute').innerHTML = trec.map(rand).join('');
-  }
+  document.getElementById('trecute-s').hidden = !trec.length;
+  document.getElementById('trecute').innerHTML = trec.map(rand).join('');
 
   // anul curent, pe luni
   const Y = azi.getFullYear();
@@ -175,16 +183,33 @@ function afiseaza({ev, err}) {
   document.getElementById('an').innerHTML = html;
 }
 
-fetch(FISIER + '?' + Date.now(), {cache: 'no-store'})
-  .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-  .then(t => afiseaza(parse(t)))
-  .catch(e => {
-    const s = document.getElementById('erori');
-    s.hidden = false;
-    s.querySelector('h2').textContent = 'Nu pot citi kmem.txt';
-    s.querySelector('pre').textContent = String(e) +
-      (location.protocol === 'file:' ? '\nPagina deschisă direct din fișier nu poate citi kmem.txt; vezi README.' : '');
-  });
+// fișier ales de mână (pagina deschisă din folder, fără server)
+function citeste(f) {
+  if (!f) return;
+  f.text().then(t => { document.getElementById('alege').hidden = true; afiseaza(parse(t)); });
+}
+document.querySelector('#alege input').addEventListener('change', e => citeste(e.target.files[0]));
+addEventListener('dragover', e => { e.preventDefault(); document.body.classList.add('trage'); });
+addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('trage'); });
+addEventListener('drop', e => {
+  e.preventDefault(); document.body.classList.remove('trage');
+  citeste(e.dataTransfer.files[0]);
+});
+
+if (location.protocol === 'file:') {
+  document.getElementById('alege').hidden = false;
+} else {
+  fetch(FISIER + '?' + Date.now(), {cache: 'no-store'})
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(t => afiseaza(parse(t)))
+    .catch(e => {
+      const s = document.getElementById('erori');
+      s.hidden = false;
+      s.querySelector('h2').textContent = 'Nu pot citi kmem.txt';
+      s.querySelector('pre').textContent = String(e);
+      document.getElementById('alege').hidden = false;
+    });
+}
 </script>
 </body>
 </html>

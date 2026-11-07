@@ -28,10 +28,13 @@ o dată 01.04.2027   ITP mașină       o singură dată
 - `29.02` cade pe 28.02 în anii nebisecți.
 - Rândurile pe care pagina nu le înțelege apar sus, cu roșu, cu numărul rândului.
 
-## Văzut local
+## Offline
 
-Deschisă direct din fișier, pagina nu poate citi `kmem.txt` (restricție a browserului). Merge cu un
-server local, din folderul proiectului:
+Pune `index.html` și `kmem.txt` într-un folder și deschide `index.html` în browser. Deschisă direct
+din fișier, pagina nu poate citi singură `kmem.txt` (restricție a browserului), așa că arată un
+buton „Alege kmem.txt”; poți și să tragi fișierul peste pagină.
+
+Fără să alegi fișierul de fiecare dată, merge cu un server local, din folderul proiectului:
 
 ```bash
 python -m http.server
