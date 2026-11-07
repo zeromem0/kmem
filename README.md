@@ -24,7 +24,7 @@ o dată 01.04.2027   ITP mașină       o singură dată
 
 - `# titlu` începe o secțiune (aniversări, comemorări, remindere sau orice altceva); titlul apare
   ca etichetă lângă evenimente.
-- `// ...` e comentariu, la fel rândurile goale.
+- `// ...` e comentariu, la început de rând sau după un spațiu la capătul rândului.
 - `29.02` cade pe 28.02 în anii nebisecți.
 - Rândurile pe care pagina nu le înțelege apar sus, cu roșu, cu numărul rândului.
 

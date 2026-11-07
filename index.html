@@ -82,7 +82,7 @@ function parse(txt) {
   const ev = [], err = [];
   let cat = '';
   txt.split(/\r?\n/).forEach((raw, i) => {
-    const l = raw.trim();
+    const l = raw.replace(/\s\/\/.*$/, '').trim();   // „ // ...” la capăt de rând e comentariu
     if (!l || l.startsWith('//')) return;
     if (l.startsWith('#')) { cat = l.replace(/^#+\s*/, ''); return; }
     let m, e = null;

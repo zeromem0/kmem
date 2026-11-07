@@ -2,3 +2,12 @@
 
 # aniversări
 21.12.1972   Calin
+26.11.1974   Cristina
+
+# comemorări
+15.03.2010   Mama            // date de test
+08.08.2015   Tata            // date de test
+
+# remindere
+10.10        ITP
+lunar 12     Chirie
