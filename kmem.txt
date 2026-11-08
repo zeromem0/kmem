@@ -1,15 +1,9 @@
 // kmem: aniversări, comemorări, remindere. Formatul e descris în README.md.
 
 # aniversări
-01.01.2008   Alex
 21.12.1972   Calin
-26.11.1974   Cristina
-11.01.1980   Tina
 
 # comemorări
-15.03.2010   Mama            // date de test
-08.08.2015   Tata            // date de test
 
 # remindere
-10.10        ITP
 lunar 12     Chirie
