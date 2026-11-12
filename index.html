@@ -44,6 +44,8 @@ th{font-weight:600;color:var(--mut);font-size:.8rem}
 tbody tr:last-child td{border-bottom:0}
 td:first-child{white-space:normal;min-width:12em}
 td.estompat{opacity:.35}
+.lista li.decedat,.luna li.decedat{opacity:.5}
+.luna li.decedat.trecut{opacity:.3}
 tr.grup td{font-weight:600;font-size:.8rem;color:var(--acc);background:var(--bg);padding-top:10px}
 #erori{color:var(--err)}
 #erori pre{white-space:pre-wrap;font-size:.85rem}
@@ -154,11 +156,17 @@ function aparitii(e, a, b) {
 const candText = n => n === 0 ? 'azi' : n === 1 ? 'mâine' : n === 2 ? 'poimâine' : n < 0 ? `acum ${-n} zile` : `peste ${n} zile`;
 const aniText = n => n ? `${n} ${n === 1 ? 'an' : n % 100 >= 20 || n % 100 === 0 ? 'de ani' : 'ani'}` : '';
 
+// numele persoanelor care au și dată de deces; nașterea lor se arată „s-ar fi împlinit”, estompat
+let decedati = new Set();
+const eDecedat = o => o.e.fel === 'nastere' && decedati.has(o.e.text);
+const aniO = o => !o.ani ? '' : eDecedat(o) ? `s-ar fi împlinit ${aniText(o.ani)}` : aniText(o.ani);
+
 function rand(o) {
   const n = dif(o.t, azi);
-  return `<li class="${n === 0 ? 'azi' : ''}">
+  const cls = [n === 0 ? 'azi' : '', eDecedat(o) ? 'decedat' : ''].join(' ').trim();
+  return `<li class="${cls}">
     <span class="cand">${candText(n)}<small>${ZS[o.t.getDay()]} ${dd(o.t.getDate())}.${dd(o.t.getMonth() + 1)}${o.e.tip === 'odata' ? '.' + o.t.getFullYear() : ''}</small></span>
-    <span>${esc(o.e.text)} ${o.ani ? `<span class="ani">· ${aniText(o.ani)}</span>` : ''} ${o.e.cat ? `<span class="tag">${esc(o.e.cat)}</span>` : ''}</span>
+    <span>${esc(o.e.text)} ${o.ani ? `<span class="ani">· ${aniO(o)}</span>` : ''} ${o.e.cat ? `<span class="tag">${esc(o.e.cat)}</span>` : ''}</span>
   </li>`;
 }
 
@@ -171,6 +179,8 @@ function afiseaza({ev, err}) {
   s.hidden = !err.length;
   s.querySelector('h2').textContent = 'Rânduri neînțelese în kmem.txt';
   s.querySelector('pre').textContent = err.join('\n');
+
+  decedati = new Set(ev.filter(e => e.fel === 'deces').map(e => e.text));
 
   const sf = new Date(azi.getTime() + ZILE * ZI);
   const urm = ev.flatMap(e => aparitii(e, azi, sf)).sort((x, y) => x.t - y.t);
@@ -192,8 +202,9 @@ function afiseaza({ev, err}) {
     l.sort((x, y) => x.t - y.t);
     const li = l.map(o => {
       const n = dif(o.t, azi);
-      return `<li class="${n < 0 ? 'trecut' : n === 0 ? 'azi' : ''}"><span class="zi">${o.t.getDate()}</span>
-        <span>${esc(o.e.text)}${o.ani ? ` <span class="ani">${aniText(o.ani)}</span>` : ''}</span></li>`;
+      const cls = [n < 0 ? 'trecut' : n === 0 ? 'azi' : '', eDecedat(o) ? 'decedat' : ''].join(' ').trim();
+      return `<li class="${cls}"><span class="zi">${o.t.getDate()}</span>
+        <span>${esc(o.e.text)}${o.ani ? ` <span class="ani">${aniO(o)}</span>` : ''}</span></li>`;
     }).join('');
     return `<div class="luna${m === azi.getMonth() ? ' acum' : ''}"><h3>${LUNI[m]}</h3><ul>${li || '<li class="gol">—</li>'}</ul></div>`;
   }).join('');
