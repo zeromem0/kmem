@@ -43,6 +43,8 @@ th,td{padding:5px 10px;text-align:left;white-space:nowrap;border-bottom:1px soli
 th{font-weight:600;color:var(--mut);font-size:.8rem}
 tbody tr:last-child td{border-bottom:0}
 td:first-child{white-space:normal;min-width:12em}
+td.estompat{opacity:.35}
+tr.grup td{font-weight:600;font-size:.8rem;color:var(--acc);background:var(--bg);padding-top:10px}
 #erori{color:var(--err)}
 #erori pre{white-space:pre-wrap;font-size:.85rem}
 footer{margin-top:28px;color:var(--mut);font-size:.85rem}
@@ -78,7 +80,7 @@ footer{margin-top:28px;color:var(--mut);font-size:.85rem}
   <section id="persoane-s" hidden>
     <h2>Persoane</h2>
     <div class="tabel"><table>
-      <thead><tr><th>Persoana</th><th colspan="2">Naștere · de atunci</th><th colspan="2">Deces · de atunci</th><th>Vârsta la deces</th></tr></thead>
+      <thead><tr><th>Persoana</th><th>Naștere</th><th>de atunci</th><th>Deces</th><th>de atunci</th><th>Vârsta la deces</th></tr></thead>
       <tbody id="persoane"></tbody>
     </table></div>
   </section>
@@ -221,18 +223,21 @@ function persoane(ev) {
   });
   const s = document.getElementById('persoane-s');
   s.hidden = !p.size;
-  const cel = e => {
+  const cel = (e, estompat) => {
     const a = aniDe(e);
-    return `<td>${dataText(e)}</td><td class="ani">${a !== null ? aniText(a) || '0 ani' : ''}</td>`;
+    return `<td>${dataText(e)}</td><td class="ani${estompat ? ' estompat' : ''}">${a !== null ? aniText(a) || '0 ani' : ''}</td>`;
   };
-  document.getElementById('persoane').innerHTML = [...p].map(([nume, {nastere: n, deces: d}]) => {
+  const rand = ([nume, {nastere: n, deces: d}]) => {
     let la = '';
     if (n && d && n.y && d.y) {
       const v = d.y - n.y - (d.m < n.m || (d.m === n.m && d.d < n.d) ? 1 : 0);
       la = aniText(v);
     }
-    return `<tr><td>${esc(nume)}</td>${cel(n)}${cel(d)}<td class="ani">${la}</td></tr>`;
-  }).join('');
+    return `<tr><td>${esc(nume)}</td>${cel(n, !!d)}${cel(d)}<td class="ani">${la}</td></tr>`;
+  };
+  const vii = [...p].filter(([, x]) => !x.deces), morti = [...p].filter(([, x]) => x.deces);
+  const grup = (titlu, l) => l.length ? `<tr class="grup"><td colspan="6">${titlu}</td></tr>` + l.map(rand).join('') : '';
+  document.getElementById('persoane').innerHTML = grup('În viață', vii) + grup('Decedați', morti);
 }
 
 // fișier ales de mână (pagina deschisă din folder, fără server)
