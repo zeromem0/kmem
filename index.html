@@ -160,13 +160,15 @@ const aniText = n => n ? `${n} ${n === 1 ? 'an' : n % 100 >= 20 || n % 100 === 0
 let decedati = new Set();
 const eDecedat = o => o.e.fel === 'nastere' && decedati.has(o.e.text);
 const aniO = o => !o.ani ? '' : eDecedat(o) ? `s-ar fi împlinit ${aniText(o.ani)}` : aniText(o.ani);
+// numele, cu † în față la comemorări (secțiunile de deces)
+const numeO = o => (o.e.fel === 'deces' ? '† ' : '') + esc(o.e.text);
 
 function rand(o) {
   const n = dif(o.t, azi);
   const cls = [n === 0 ? 'azi' : '', eDecedat(o) ? 'decedat' : ''].join(' ').trim();
   return `<li class="${cls}">
     <span class="cand">${candText(n)}<small>${ZS[o.t.getDay()]} ${dd(o.t.getDate())}.${dd(o.t.getMonth() + 1)}${o.e.tip === 'odata' ? '.' + o.t.getFullYear() : ''}</small></span>
-    <span>${esc(o.e.text)} ${o.ani ? `<span class="ani">· ${aniO(o)}</span>` : ''} ${o.e.cat ? `<span class="tag">${esc(o.e.cat)}</span>` : ''}</span>
+    <span>${numeO(o)} ${o.ani ? `<span class="ani">· ${aniO(o)}</span>` : ''} ${o.e.cat ? `<span class="tag">${esc(o.e.cat)}</span>` : ''}</span>
   </li>`;
 }
 
@@ -204,7 +206,7 @@ function afiseaza({ev, err}) {
       const n = dif(o.t, azi);
       const cls = [n < 0 ? 'trecut' : n === 0 ? 'azi' : '', eDecedat(o) ? 'decedat' : ''].join(' ').trim();
       return `<li class="${cls}"><span class="zi">${o.t.getDate()}</span>
-        <span>${esc(o.e.text)}${o.ani ? ` <span class="ani">${aniO(o)}</span>` : ''}</span></li>`;
+        <span>${numeO(o)}${o.ani ? ` <span class="ani">${aniO(o)}</span>` : ''}</span></li>`;
     }).join('');
     return `<div class="luna${m === azi.getMonth() ? ' acum' : ''}"><h3>${LUNI[m]}</h3><ul>${li || '<li class="gol">—</li>'}</ul></div>`;
   }).join('');
