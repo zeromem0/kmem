@@ -156,10 +156,10 @@ function aparitii(e, a, b) {
 const candText = n => n === 0 ? 'azi' : n === 1 ? 'mâine' : n === 2 ? 'poimâine' : n < 0 ? `acum ${-n} zile` : `peste ${n} zile`;
 const aniText = n => n ? `${n} ${n === 1 ? 'an' : n % 100 >= 20 || n % 100 === 0 ? 'de ani' : 'ani'}` : '';
 
-// numele persoanelor care au și dată de deces; nașterea lor se arată „s-ar fi împlinit”, estompat
+// numele persoanelor care au și dată de deces; nașterea lor se arată „ar fi împlinit”, estompat
 let decedati = new Set();
 const eDecedat = o => o.e.fel === 'nastere' && decedati.has(o.e.text);
-const aniO = o => !o.ani ? '' : eDecedat(o) ? `s-ar fi împlinit ${aniText(o.ani)}` : aniText(o.ani);
+const aniO = o => !o.ani ? '' : eDecedat(o) ? `ar fi împlinit ${aniText(o.ani)}` : aniText(o.ani);
 // numele, cu † în față la comemorări (secțiunile de deces)
 const numeO = o => (o.e.fel === 'deces' ? '† ' : '') + esc(o.e.text);
 
